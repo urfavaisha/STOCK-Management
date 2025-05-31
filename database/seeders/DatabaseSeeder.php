@@ -39,6 +39,11 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
+        $this->call([
+            UserSeeder::class,
+            WarehouseValueSeeder::class,
+        ]);
+
         // Create categories from predefined list
         $categories = collect($this->categories)->map(function ($name) {
             return Category::create(['name' => $name]);

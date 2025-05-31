@@ -197,7 +197,7 @@
                     `);
                 });
 
-                // Update pagination links
+                // Update pagination
                 let pagination = response.pagination;
                 let paginationHtml = '';
 
@@ -225,7 +225,7 @@
                 $('.d-flex.justify-content-center.mt-4').html(paginationHtml);
 
                 // Reattach event handlers
-
+                attachEventHandlers();
             },
             error: function(xhr) {
                 console.error('Error loading products:', xhr);
@@ -234,13 +234,11 @@
     }
 
     // Handle search
-
     $('#searchInput').on('keypress', function(e) {
-       if (e.which===13)
-       {
+        if (e.which === 13) {
             let search = $(this).val();
             loadProducts(1, search);
-       }
+        }
     });
 
     $('#searchButton').on('click', function() {
@@ -248,7 +246,60 @@
         loadProducts(1, search);
     });
 
+    // Handle pagination clicks
+    $(document).on('click', '.pagination .page-link', function(e) {
+        e.preventDefault();
+        let page = $(this).data('page');
+        let search = $('#searchInput').val();
+        loadProducts(page, search);
+    });
+
     // Initial event handlers attachment
+    function attachEventHandlers() {
+        // Edit button
+        $(document).on('click', '.edit-product', function() {
+            const productId = $(this).data('id');
+            // Fetch product data via AJAX
+            $.ajax({
+                url: `/products/${productId}/edit`,
+                type: 'GET',
+                success: function(product) {
+                    // Set form values
+                    $('#editProductId').val(product.id);
+                    $('#editName').val(product.name);
+                    $('#editDescription').val(product.description);
+                    $('#editPrice').val(product.price);
+                    $('#editCategoryId').val(product.category_id);
+                    $('#editSupplierId').val(product.supplier_id);
+                    
+                    // Handle image preview
+                    if (product.picture) {
+                        $('#currentImage').show();
+                        $('#currentImage img').attr('src', `/storage/${product.picture}`);
+                    } else {
+                        $('#currentImage').hide();
+                    }
+
+                    // Clear any previous validation errors
+                    $('#editProductForm .is-invalid').removeClass('is-invalid');
+                    $('#editProductForm .invalid-feedback').empty();
+                },
+                error: function(xhr) {
+                    console.error('Error fetching product data:', xhr);
+                }
+            });
+        });
+
+        // Delete button
+        $(document).on('click', '.delete-product', function() {
+            const productId = $(this).data('id');
+            const productName = $(this).data('name');
+            $('#deleteProductId').val(productId);
+            $('#productName').text(productName);
+        });
+    }
+
+    // Initial load
     attachEventHandlers();
 });
 </script>

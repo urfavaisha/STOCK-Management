@@ -96,10 +96,19 @@
                 </a>
 
                 <div class="d-flex align-items-center">
-                    <a href="{{ route('dashboard') }}" class="btn btn-outline-light me-3">
-                     @lang("Dashboard")
-                    </a>
-                    <div class="language-selector">
+                    @auth
+                        <form method="POST" action="{{ route('logout') }}" class="d-inline">
+                            @csrf
+                            <button type="submit" class="btn btn-outline-light">
+                                @lang('Logout')
+                            </button>
+                        </form>
+                    @else
+                        <a href="{{ route('login') }}" class="btn btn-outline-light">
+                            @lang('Login')
+                        </a>
+                    @endauth
+                    <div class="language-selector ms-3">
                         <select name="selectLocale" id="selectLocale" class="form-select form-select-sm">
                             <option @if(app()->getLocale() == 'ar') selected @endif value="ar">العربية</option>
                             <option @if(app()->getLocale() == 'fr') selected @endif value="fr">Français</option>
@@ -126,9 +135,21 @@
     <script>
         $("#selectLocale").on('change',function(){
             var locale = $(this).val();
-            window.location.href = "/changeLocale/"+locale;
-        })
+            window.location.href = "{{ url('changeLocale') }}/" + locale;
+        });
     </script>
+
+    @if(session('success'))
+    <script>
+        alert("{{ session('success') }}");
+    </script>
+    @endif
+
+    @if(session('error'))
+    <script>
+        alert("{{ session('error') }}");
+    </script>
+    @endif
 
     <footer class="py-4 text-white mt-auto">
         <div class="container">

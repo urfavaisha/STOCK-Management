@@ -161,4 +161,9 @@ class ProductController extends Controller
             ->get();
         return view('products.products_more_than_6_orders', compact('products'));
     }
+
+    public function edit(Product $product)
+    {
+        return response()->json($product);
+    }
 }

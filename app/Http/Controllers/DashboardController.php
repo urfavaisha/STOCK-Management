@@ -44,11 +44,11 @@ class DashboardController extends Controller
     }
 
 
- public function partie26(): View
+ public function cooksess(): View
     {
         $user = Auth::user();
         $pic = $user?->avatar ?? 'default-avatar.png';
-        return view('partie26',compact('pic'));
+        return view('cooksess', compact('pic'));
     }
 
 
@@ -109,41 +109,47 @@ class DashboardController extends Controller
 
     public function suppliersByCustomer(): View
     {
-        $productIds = Customer::where("customers.first_name","Harold")
-        ->where("customers.last_name","Feeney")
-        ->join("orders","customers.id","=","orders.customer_id")
-        ->join("product_orders","orders.id","=","product_orders.order_id")
-        ->select("product_id")
-        ->pluck("product_id");
+        // Get the first customer from the database
+        $customer = Customer::first();
+        
+        if (!$customer) {
+            return view('dashboard.suppliers_by_customer', ['suppliers' => collect()]);
+        }
 
+        $productIds = Customer::where("customers.id", $customer->id)
+            ->join("orders","customers.id","=","orders.customer_id")
+            ->join("product_orders","orders.id","=","product_orders.order_id")
+            ->select("product_id")
+            ->pluck("product_id");
 
-         $suppliers = Product::whereIn("products.id",$productIds)
-        ->join("suppliers","products.supplier_id","=","suppliers.id")
-        ->select("first_name","last_name","name")
-        ->get();
+        $suppliers = Product::whereIn("products.id",$productIds)
+            ->join("suppliers","products.supplier_id","=","suppliers.id")
+            ->select("first_name","last_name","name")
+            ->get();
 
-        return view('dashboard.suppliers_by_customer', compact('suppliers'));
+        return view('dashboard.suppliers_by_customer', compact('suppliers', 'customer'));
     }
 
     /**
-     * Display products stored in the same warehouses as products supplied by 'Scottie Crona'
+     * Display products stored in the same warehouses as products supplied by a specific supplier
      */
-
     public function productsSameWarehouse(): View
     {
-        $supplier = Supplier::where('first_name', 'Ruthie')->where('last_name', 'Will')->first();
+        // Get Premium Supplier as reference
+        $supplier = Supplier::where('first_name', 'Premium')
+            ->where('last_name', 'Supplier')
+            ->first();
 
         if (!$supplier) {
             return view('dashboard.products_same_warehouse', ['products' => collect(), 'supplier' => null]);
         }
 
-        // Obtenir les identifiants des magasins où sont stockés les produits de Scottie Crona
+        // Get store IDs where the supplier's products are stored
         $storeIds = Store::whereHas('stocks.product.supplier', function($query) use ($supplier) {
             $query->where('id', $supplier->id);
         })->pluck('id');
-        //dd($storeIds);
 
-        // Obtenir des produits dans les magasins qui ne sont pas de Scottie Crona
+        // Get products in those stores that are not from this supplier
         $products = Product::with(['category', 'supplier', 'stock.store'])
             ->whereHas('stock', function($query) use ($storeIds) {
                 $query->whereIn('store_id', $storeIds);
@@ -186,46 +192,42 @@ class DashboardController extends Controller
         return view('dashboard.warehouse_values', compact('warehouses'));
     }
 
-    /*** Display warehouses with value greater than Lind-Gislason warehouse */
+    /**
+     * Display warehouses with value greater than a reference warehouse
+     */
     public function warehousesGreaterValue(): View
     {
-        // First, find the Lind-Gislason warehouse and calculate its value
-        $lindGislasonWarehouse = Store::where('name', 'Watsica-Gutmann')->first();
-
-        if (!$lindGislasonWarehouse) {
+        // Get Lind-Gislason as reference warehouse
+        $referenceStore = Store::where('name', 'Lind-Gislason')->first();
+        
+        if (!$referenceStore) {
             return view('dashboard.warehouses_greater_value', [
                 'warehouses' => collect(),
-                'referenceWarehouse' => null,
+                'referenceWarehouse' => 'Lind-Gislason',
                 'referenceValue' => 0
             ]);
         }
 
-        $referenceValue = $lindGislasonWarehouse->stocks->sum(function($stock) {
-            return $stock->quantity_stock * $stock->product->price;
-        });
+        // Calculate total value for reference warehouse
+        $referenceValue = Stock::where('store_id', $referenceStore->id)
+            ->join('products', 'stocks.product_id', '=', 'products.id')
+            ->selectRaw('SUM(products.price * stocks.quantity_stock) as total_value')
+            ->value('total_value') ?? 0;
 
-        // Get all warehouses with their values
-        $allWarehouses = Store::with('stocks.product')->get()
-            ->map(function($store) {
-                $totalValue = $store->stocks->sum(function($stock) {
-                    return $stock->quantity_stock * $stock->product->price;
-                });
-
-                return [
-                    'id' => $store->id,
-                    'name' => $store->name,
-                    'total_value' => $totalValue
-                ];
-            });
-
-        // Filter warehouses with value greater than Lind-Gislason
-        $warehousesGreaterValue = $allWarehouses->filter(function($warehouse) use ($referenceValue, $lindGislasonWarehouse) {
-            return $warehouse['id'] != $lindGislasonWarehouse->id && $warehouse['total_value'] > $referenceValue;
-        })->values();
+        // Get all warehouses with their total values
+        $warehouses = Store::withCount('stocks')
+            ->withSum(['stocks as total_value' => function($query) {
+                $query->join('products', 'stocks.product_id', '=', 'products.id')
+                    ->selectRaw('SUM(products.price * stocks.quantity_stock)');
+            }], 'stocks.quantity_stock')
+            ->where('id', '!=', $referenceStore->id) // Exclude reference warehouse
+            ->having('total_value', '>', $referenceValue)
+            ->orderBy('total_value', 'desc')
+            ->get();
 
         return view('dashboard.warehouses_greater_value', [
-            'warehouses' => $warehousesGreaterValue,
-            'referenceWarehouse' => $lindGislasonWarehouse->name,
+            'warehouses' => $warehouses,
+            'referenceWarehouse' => 'Lind-Gislason',
             'referenceValue' => $referenceValue
         ]);
     }
@@ -247,24 +249,56 @@ class DashboardController extends Controller
             return redirect()->back();
    }
 
+    public function chart(): View
+    {
+        // Simple counts for stores and categories
+        $stores = Store::select('name')
+            ->withCount('stocks')
+            ->having('stocks_count', '>', 1)
+            ->get();
+        
+        // Get unique categories with their product counts
+        $categories = Category::select('categories.name', DB::raw('COUNT(products.id) as products_count'))
+            ->leftJoin('products', 'categories.id', '=', 'products.category_id')
+            ->groupBy('categories.name')
+            ->get();
 
+        $data = [
+            'bar' => [
+                'labels' => $stores->pluck('name'),
+                'values' => $stores->pluck('stocks_count')
+            ],
+            'doughnut' => [
+                'labels' => $categories->pluck('name'),
+                'values' => $categories->pluck('products_count')
+            ]
+        ];
 
-   public function saveAvatar()
-   {
-    request()->validate([
-        'avatarFile'=>'required|image',
-            ]);
-    $ext = request()->avatarFile->getClientOriginalExtension();
-    $name = Str::random(30).time().".".$ext;
-    request()->avatarFile->move(public_path('storage/avatars'),$name);
-    $user =  Auth::user();
-if ($user) {
-    $user->avatar = $name;
-    $user->save();
-    return redirect()->back()->with('success', 'Avatar mis à jour.');
+        return view('chart', compact('data'));
+    }
+
+    public function saveAvatar(Request $request)
+{
+    $request->validate([
+        'avatarFile' => 'required|image',
+    ]);
+
+    $ext = $request->avatarFile->getClientOriginalExtension();
+    $name = Str::random(30) . time() . "." . $ext;
+
+    $request->avatarFile->move(public_path('storage/avatars'), $name);
+
+    $user = Auth::user();
+    if ($user) {
+        $user->avatar = $name;
+        $user->save();
+        dd($name); // Debugging statement to check if the file name is set correctly
+        return redirect()->back()->with('success', 'Avatar mis à jour.')->with('pic', $name);
+    }
+
+    return redirect()->back()->withErrors(['error' => 'Utilisateur non authentifié']);
 }
 
-   }
 
 
 }

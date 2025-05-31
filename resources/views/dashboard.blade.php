@@ -53,7 +53,8 @@
                     <div class="d-flex flex-column gap-2">
                         <a href="{{ route('orders.index') }}" class="btn btn-sm btn-primary w-100">@lang('Commandes')</a>
                         <a href="{{ route('mail.form') }}" class="btn btn-sm btn-primary w-100">@lang("Envoyer un email")</a>
-                        <a href="/partie26" class="btn btn-sm btn-primary w-100">@lang("Cookies - Sessions")</a>
+                        <a href="/cooksess" class="btn btn-sm btn-primary w-100">@lang("Cookies - Sessions")</a>
+                        <a href="{{ route('chart') }}" class="btn btn-sm btn-primary w-100">@lang("Chart")</a>
                     </div>
                 </div>
             </div>
@@ -119,9 +120,8 @@
                     </a>
                 </div>
                 <div class="col-md-4">
-                    <a href="{{ route('dashboard.warehouses_greater_value') }}" class="btn btn-sm btn-outline-primary w-100">
-                        @lang(('Warehouses with Value Greater Than')) {{ $referenceWarehouse ?? 'Lind-Gislason' }}</p>
-
+                    <a href="{{ route('dashboard.warehouses.greater.value') }}" class="btn btn-sm btn-outline-primary w-100">
+                        @lang('Warehouses with Value Greater Than') Lind-Gislason
                     </a>
                 </div>
             </div>

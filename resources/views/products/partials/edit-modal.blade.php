@@ -45,7 +45,7 @@
                         <select class="form-select" id="editSupplierId" name="supplier_id" required>
                             <option value="">Select Supplier</option>
                             @foreach($suppliers as $supplier)
-                                <option value="{{ $supplier->id }}">{{ $supplier->name }}</option>
+                                <option value="{{ $supplier->id }}">{{ $supplier->first_name }} {{ $supplier->last_name }}</option>
                             @endforeach
                         </select>
                         <div class="invalid-feedback"></div>
@@ -53,6 +53,10 @@
 
                     <div class="mb-3">
                         <label for="editPicture" class="form-label">Product Image</label>
+                        <div id="currentImage" class="mb-2" style="display: none;">
+                            <p>Current Image:</p>
+                            <img src="" alt="Current product image" class="img-thumbnail" style="max-height: 200px;">
+                        </div>
                         <input type="file" class="form-control" id="editPicture" name="picture" accept="image/*">
                         <div class="invalid-feedback"></div>
                     </div>
@@ -100,6 +104,7 @@ $(document).ready(function() {
         let form = $('#editProductForm');
         form.find('.is-invalid').removeClass('is-invalid');
         form.find('.invalid-feedback').empty();
+        $('#currentImage').hide();
     });
 });
 </script>

@@ -11,11 +11,11 @@
 
     <div class="card shadow-sm">
         <div class="card-header bg-light py-3">
-            <h2 class="h5 mb-0"><i class="fas fa-warehouse me-2"></i>{{ __('Products Stored in Same Warehouses as') }} {{ $supplier ? $supplier->first_name . ' ' . $supplier->last_name : 'Scottie Crona' }}'s {{ __('Products') }}</h2>
+            <h2 class="h5 mb-0"><i class="fas fa-warehouse me-2"></i>{{ __('Products Stored in Same Warehouses as') }} {{ $supplier ? $supplier->first_name . ' ' . $supplier->last_name : 'No Supplier' }}'s {{ __('Products') }}</h2>
         </div>
         <div class="card-body p-0">
             @if(!$supplier)
-                <div class="alert alert-warning m-3">{{ __('Supplier "Scottie Crona" not found in the database.') }}</div>
+                <div class="alert alert-warning m-3">{{ __('No supplier found in the database.') }}</div>
             @else
                 <div class="table-responsive">
                     <table class="table table-hover mb-0">
