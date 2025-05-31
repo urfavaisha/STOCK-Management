@@ -34,21 +34,37 @@ class CustomerController extends Controller
     }
 
     /**
-     * Show customers who ordered the same products as Annabel Stehr.
+     * Show customers who ordered the same products as a reference customer.
      */
     public function sameProductsCustomers()
     {
-        // Find the customer Annabel Stehr
-        $customer =Customer::whereRaw("CONCAT(first_name, ' ', last_name) = ?", ['Annabel Stehr'])->first();
+        // Find a customer who has other customers ordering the same products
+        $customer = DB::table('orders')
+            ->join('product_orders', 'orders.id', '=', 'product_orders.order_id')
+            ->join('customers', 'orders.customer_id', '=', 'customers.id')
+            ->select('customers.id', 'customers.first_name', 'customers.last_name')
+            ->groupBy('customers.id', 'customers.first_name', 'customers.last_name')
+            ->havingRaw('COUNT(DISTINCT product_orders.product_id) > 0')
+            ->havingRaw('EXISTS (
+                SELECT 1 FROM orders o2
+                JOIN product_orders po2 ON o2.id = po2.order_id
+                WHERE o2.customer_id != customers.id
+                AND po2.product_id IN (
+                    SELECT product_id FROM product_orders po3
+                    JOIN orders o3 ON po3.order_id = o3.id
+                    WHERE o3.customer_id = customers.id
+                )
+            )')
+            ->first();
+
         if (!$customer) {
             return view('customers.same_products_customers', ['customers' => collect()]);
         }
-        // Get product IDs ordered by Annabel Stehr
+
+        // Get product IDs ordered by the reference customer
         $productIds = Order::join('product_orders', 'orders.id', '=', 'product_orders.order_id')
             ->where('orders.customer_id', $customer->id)
-          ->pluck('product_orders.product_id');
-
-
+            ->pluck('product_orders.product_id');
 
         // Get other customers who ordered the same products
         $customers = DB::table('orders')
@@ -65,7 +81,8 @@ class CustomerController extends Controller
             ])
             ->orderBy('customer_name')
             ->get();
-        return view('customers.same_products_customers', compact('customers'));
+
+        return view('customers.same_products_customers', compact('customers', 'customer'));
     }
 
 

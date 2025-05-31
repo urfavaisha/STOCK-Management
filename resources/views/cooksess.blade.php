@@ -56,17 +56,52 @@
     </div>
     <div>
 
-<form method="POST" action="{{ route('saveAvatar') }}" enctype="multipart/form-data">
+<form method="POST" action="{{ route('saveAvatar') }}" enctype="multipart/form-data" id="avatarForm">
     @csrf
     <label for="avatarFile">@lang('Choose your picture')</label>
-    <input type="file" id="avatarFile" name="avatarFile" required />
+    <input type="file" id="avatarFile" name="avatarFile" accept="image/*" required />
     <button type="submit" class="btn btn-primary bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
         {{ __('Save picture') }} {{ trans("for your account") }}
     </button>
+    <div id="imagePreview" class="mt-3" style="display: none;">
+        <img id="preview" style="width:200px; border-radius:50%" src="" alt="Preview">
+    </div>
     @if(isset($pic))
-        <img style="width:200px; border-radius:50%" src="{{ 'storage/avatars/' . $pic }}" alt="">
+        <div id="currentAvatar" class="mt-3">
+            <img style="width:200px; border-radius:50%" src="{{ 'storage/avatars/' . $pic }}" alt="Current Avatar">
+        </div>
     @endif
 </form>
     </div>
 </div>
+
+<script>
+document.getElementById('avatarForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const fileInput = document.getElementById('avatarFile');
+    const preview = document.getElementById('preview');
+    const previewDiv = document.getElementById('imagePreview');
+    const currentAvatar = document.getElementById('currentAvatar');
+    
+    if (fileInput.files && fileInput.files[0]) {
+        const reader = new FileReader();
+        
+        reader.onload = function(e) {
+            preview.src = e.target.result;
+            previewDiv.style.display = 'block';
+            if (currentAvatar) {
+                currentAvatar.style.display = 'none';
+            }
+            
+            // Submit the form after showing preview
+            setTimeout(() => {
+                document.getElementById('avatarForm').submit();
+            }, 100);
+        }
+        
+        reader.readAsDataURL(fileInput.files[0]);
+    }
+});
+</script>
 @endsection

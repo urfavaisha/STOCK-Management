@@ -11,11 +11,11 @@
 
     <div class="card shadow-sm">
         <div class="card-header bg-light py-3">
-            <h2 class="h5 mb-0"><i class="fas fa-warehouse me-2"></i>{{ __('Products Stored in Same Warehouses as') }} {{ $supplier ? $supplier->first_name . ' ' . $supplier->last_name : 'No Supplier' }}'s {{ __('Products') }}</h2>
+            <h2 class="h5 mb-0"><i class="fas fa-warehouse me-2"></i>{{ __('Products Stored in Same Warehouses as') }} "{{ $referenceProduct ? $referenceProduct->name : 'No Product' }}"</h2>
         </div>
         <div class="card-body p-0">
-            @if(!$supplier)
-                <div class="alert alert-warning m-3">{{ __('No supplier found in the database.') }}</div>
+            @if(!$referenceProduct)
+                <div class="alert alert-warning m-3">{{ __('No products found sharing warehouses with other products.') }}</div>
             @else
                 <div class="table-responsive">
                     <table class="table table-hover mb-0">
@@ -41,7 +41,7 @@
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="6" class="text-center py-4">{{ __('No products found') }}</td>
+                                    <td colspan="6" class="text-center py-4">{{ __('No products found in the same warehouses') }}</td>
                                 </tr>
                             @endforelse
                         </tbody>

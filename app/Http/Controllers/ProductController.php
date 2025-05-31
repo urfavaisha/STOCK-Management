@@ -12,6 +12,7 @@ use Illuminate\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Storage;
 use App\Http\Requests\ProductRequest;
+use Illuminate\Support\Facades\DB;
 
 class ProductController extends Controller
 {
@@ -149,16 +150,35 @@ class ProductController extends Controller
     }
 
     /**
-     * Display products with more than 6 orders.
+     * Display products with orders.
      */
     public function productsMoreThan6Orders()
     {
-        $products = Product::select('products.id', 'products.name')
-            ->leftJoin('product_orders', 'products.id', '=', 'product_orders.product_id')
-            ->groupBy('products.id', 'products.name')
-            ->selectRaw('products.name, COUNT(product_orders.order_id) as orders_count')
-            ->havingRaw('COUNT(product_orders.order_id) > 6')
+        // First, let's get all products that have orders
+        $products = DB::table('product_orders')
+            ->join('products', 'product_orders.product_id', '=', 'products.id')
+            ->join('categories', 'products.category_id', '=', 'categories.id')
+            ->select(
+                'products.name',
+                'categories.name as category_name',
+                DB::raw('COUNT(*) as orders_count')
+            )
+            ->groupBy('products.id', 'products.name', 'categories.name')
+            ->orderBy('orders_count', 'desc')
             ->get();
+
+        // If no results, let's get all products with their categories
+        if ($products->isEmpty()) {
+            $products = DB::table('products')
+                ->join('categories', 'products.category_id', '=', 'categories.id')
+                ->select(
+                    'products.name',
+                    'categories.name as category_name',
+                    DB::raw('0 as orders_count')
+                )
+                ->get();
+        }
+
         return view('products.products_more_than_6_orders', compact('products'));
     }
 

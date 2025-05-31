@@ -2,7 +2,7 @@
 
 @section('content')
 <div class="container">
-    <h2>Clients ayant commandé les mêmes produits que Annabel Stehr</h2>
+    <h2>Clients ayant commandé les mêmes produits que {{ $customer->first_name }} {{ $customer->last_name }}</h2>
     <table class="table table-bordered">
         <thead>
             <tr>

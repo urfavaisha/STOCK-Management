@@ -2,7 +2,7 @@
 
 @section('content')
 <div class="container">
-    <h2>Orders with Total Greater Than Order #60 (Total: {{ number_format($order60Total, 2) }})</h2>
+    <h2>Orders with Total Greater Than Average Order Value (Average: ${{ number_format($averageOrderValue, 2) }})</h2>
 
     <table class="table table-bordered">
         <thead>
@@ -19,10 +19,11 @@
                 <td>{{ $order->id }}</td>
                 <td>{{ $order->customer_name }}</td>
                 <td>{{ $order->order_date }}</td>
-                <td>{{ number_format($order->total_amount, 2) }}</td>
+                <td>${{ number_format($order->total_amount, 2) }}</td>
             </tr>
             @endforeach
         </tbody>
     </table>
+    <a href="{{ route('dashboard') }}" class="btn btn-secondary mt-3">Back to Dashboard</a>
 </div>
 @endsection

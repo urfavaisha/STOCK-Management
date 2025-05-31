@@ -17,13 +17,10 @@ class OrderController extends Controller
     }
         public function ordersGreaterThanOrder60()
     {
-        // Subquery to get total amount for order 60
-        $order60Total = DB::table('product_orders')
-            ->where('order_id', 60)
-            ->selectRaw('SUM(price * quantity)')
-         //   ->get();
-            ->value(DB::raw('SUM(price * quantity)')); // to recieve a scalar value instead of collection
-         //   dd($order60Total);
+        // Calculate average order value
+        $averageOrderValue = DB::table('product_orders')
+            ->selectRaw('AVG(price * quantity) as avg_value')
+            ->value('avg_value');
 
         $orders = Order::join('customers', 'orders.customer_id', '=', 'customers.id')
             ->join('product_orders', 'orders.id', '=', 'product_orders.order_id')
@@ -34,27 +31,11 @@ class OrderController extends Controller
                 DB::raw('SUM(product_orders.price * product_orders.quantity) as total_amount')
             )
             ->groupBy('orders.id', 'customers.first_name', 'customers.last_name', 'orders.order_date')
-            ->having('total_amount', '>', $order60Total)
+            ->having('total_amount', '>', $averageOrderValue)
             ->orderBy('orders.id')
             ->get();
 
-    //     $orders = Order::join('customers', 'orders.customer_id', '=', 'customers.id')
-    // ->join('product_orders', 'orders.id', '=', 'product_orders.order_id')
-    // ->select(
-    //     'orders.id',
-    //     DB::raw("CONCAT(customers.first_name, ' ', customers.last_name) as customer_name"),
-    //     'orders.order_date',
-    //     DB::raw('SUM(product_orders.price * product_orders.quantity) as total_amount')
-    // )
-    // ->groupBy('orders.id', 'customers.first_name', 'customers.last_name', 'orders.order_date')
-    // ->havingRaw('SUM(product_orders.price * product_orders.quantity) > (
-    //     SELECT SUM(price * quantity)
-    //     FROM product_orders
-    //     WHERE order_id = 60
-    // )')
-    // ->orderBy('orders.id')
-    // ->get();
-        return view('orders.orders_greater_than_60', compact('orders', 'order60Total'));
+        return view('orders.orders_greater_than_60', compact('orders', 'averageOrderValue'));
     }
 
 
