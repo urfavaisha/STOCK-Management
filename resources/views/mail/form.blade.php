@@ -41,7 +41,7 @@
                 </div>
 
                 <div class="d-grid">
-                    <button type="submit" class="btn btn-primary">@lang('Envoyer l'e-mail')</button>
+                    <button type="submit" class="btn btn-primary">Envoyer l'e-mail</button>
                 </div>
             </form>
         </div>

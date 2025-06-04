@@ -4,6 +4,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>Stock Management </title>
     <!-- Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -97,12 +98,32 @@
 
                 <div class="d-flex align-items-center">
                     @auth
-                        <form method="POST" action="{{ route('logout') }}" class="d-inline">
+                        <form method="POST" action="{{ route('logout') }}" class="d-inline" id="logout-form">
                             @csrf
                             <button type="submit" class="btn btn-outline-light">
                                 @lang('Logout')
                             </button>
                         </form>
+                        <script>
+                            // Fallback for logout if form submission fails
+                            document.getElementById('logout-form').addEventListener('submit', function(e) {
+                                e.preventDefault();
+                                fetch(this.action, {
+                                    method: 'POST',
+                                    headers: {
+                                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                                        'Accept': 'application/json',
+                                        'Content-Type': 'application/json'
+                                    },
+                                    credentials: 'same-origin'
+                                }).then(() => {
+                                    window.location.href = '/';
+                                }).catch(() => {
+                                    // If fetch fails, try traditional form submission
+                                    this.submit();
+                                });
+                            });
+                        </script>
                     @else
                         <a href="{{ route('login') }}" class="btn btn-outline-light">
                             @lang('Login')
@@ -130,6 +151,14 @@
     <script src="https://code.jquery.com/ui/1.13.2/jquery-ui.min.js"></script>
     <!-- Bootstrap JS Bundle with Popper -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script>
+        $.ajaxSetup({
+            headers: {
+                'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+            }
+        });
+    </script>
 
     @stack('scripts')
     <script>
